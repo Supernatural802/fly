@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Banner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <!--DOUBLE CLICK META TAGS. MUST BE ADJUSTED TO THE SIZE OF EACH BANNER-->
+    <meta name="ad.size" content="width=300,height=250">
+
+
+
+    <!-- GOOGLE FONTS. UPDATED PER CREATIVE, OR DELETE IF WE AREN'T USING GOOGLE FONTS -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+
+    <!--LINKS FOR GREENSOCK AND SCROLLBARS. DON'T ADJUST-->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.1.1/gsap.min.js"></script>
+
+    <style type="text/css" media="screen">
+      html, body, div,
+      a, img {
+        margin:0;
+        padding:0;
+        border:0;
+        font-size:100%;
+        font:inherit;
+        vertical-align:baseline;
+      }
+      body {
+        font-family:arial;
+        background:#ffffff;
+        overflow:hidden;
+      }
+      /* Set all borders to black by default */
+      * {
+        border-color: rgb(0, 0, 0) !important;
+      }
+ 
+        
+      /* START STANDARD FRAME, COVER, BANNER ELEMENTS. DON'T ADJUST -----------------*/
+
+      #frame {position:absolute;top:0px;left:0px;width:100%;height:100%;z-index:900;pointer-events: none}
+      .frame {position:absolute;background-color:#7f7f7f;}
+      #frameTop {width:100%;height:1px;top:0px;left:0px;}
+      #frameBottom {width:100%;height:1px;bottom:0px;left:0px;}
+      #frameLeft {width:1px;height:100%;top:0px;left:0px;}
+      #frameRight {width:1px;height:100%;top:0px;right:0px;}
+      #cover {position:absolute;width:100%;height:100%;top:0px;left:0px;background-color:#ffffff;opacity:1;z-index:10000;}
+      .bannerElement {position:absolute;background-size:contain;background-repeat:no-repeat;width:100%;height:100%;opacity:0;}
+
+      /* THESE ARE STYLES UNIQUE TO EACH UNIT ---------------------------------------*/
+
+      #container {
+        position:absolute;
+        overflow:hidden;
+        background-size: contain;
+        background:#ffffff;
+        width:100vw; /* full viewport width */
+        height:100vh; /* full viewport height */
+        top:0px;
+        left:0px;
+      }
+
+ 
+
+
+
+
+
+
+      #popup01 {
+        background-image:url(popup01.png);
+        z-index:300;
+      }
+
+      #fly {
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        background-image: url(fly.png);
+        background-size: contain;
+        background-repeat: no-repeat;
+        z-index: 400;
+        top: 50vh;
+        left: 50vw;
+        transform: translate(-50%, -50%);
+        transform-origin: center;
+      }
+
+      #flyBoundingBox {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        border: none;
+        border-radius: 50%;
+        top: calc(50vh - 125px);
+        left: calc(50vw - 125px);
+        z-index: 399;
+        cursor: pointer;
+        background: transparent;
+      }
+
+      .game-header {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        z-index: 1000;
+      }
+
+      .game-title {
+        font-size: 48px;
+        font-weight: bold;
+        color: #2c3e50;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin-bottom: 20px;
+      }
+
+      .start-button {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 25px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+      }
+
+      .start-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      }
+
+      .start-button:active {
+        transform: translateY(0);
+      }
+
+      .start-button.hidden {
+        display: none;
+      }
+
+      /* FONTS, BULLETS AND LIST STYLES ---------------------------------------*/
+
+
+
+    </style>
+
+  </head>
+
+  <body>
+
+    <div id="container">
+
+      <div class="bannerElement" id="cover"></div>
+
+      <div id="frame">
+        <div class="frame" id="frameTop"></div>
+        <div class="frame" id="frameBottom"></div>
+        <div class="frame" id="frameLeft"></div>
+        <div class="frame" id="frameRight"></div>
+      </div>
+
+      <!-- Game Header -->
+      <div class="game-header">
+        <div class="game-title">GET THE FLY</div>
+        <button class="start-button" id="startButton">Click Here to Start</button>
+      </div>
+
+      <div id="flyBoundingBox"></div>
+      <div id="fly"></div>
+
+      <!-- Audio element for fly buzzing sound -->
+      <audio id="flyBuzz" preload="auto" loop>
+        <source src="buzzing.mp3" type="audio/mpeg">
+      </audio>
+      
+    </div>
+
+  </body>
+
+  <script>
+
+  window.onload = function() {
+    // INITIAL SETUP
+    gsap.to(cover, {duration:0, opacity:0, display:"none", ease:"none"});
+    
+    // Initialize fly animation
+    initFlyAnimation();
+    
+    // Add start button functionality
+    const startButton = document.getElementById('startButton');
+    startButton.addEventListener('click', function() {
+      console.log('Start button clicked - enabling audio and starting game');
+      
+      // Hide the start button
+      startButton.classList.add('hidden');
+      
+      // Start the buzzing audio immediately
+      const flyBuzz = document.getElementById('flyBuzz');
+      if (flyBuzz) {
+        flyBuzz.currentTime = 0;
+        flyBuzz.volume = 0.3;
+        flyBuzz.play().then(() => {
+          console.log('Audio started successfully');
+        }).catch(e => {
+          console.log('Audio start failed:', e);
+        });
+      }
+      
+      // Trigger the first fly animation
+      const boundingBox = document.getElementById('flyBoundingBox');
+      if (boundingBox) {
+        // Simulate mouse enter event to start the first animation
+        boundingBox.dispatchEvent(new Event('mouseenter'));
+      }
+    });
+  }
+
+  function initFlyAnimation() {
+    const fly = document.getElementById('fly');
+    const boundingBox = document.getElementById('flyBoundingBox');
+    const flyBuzz = document.getElementById('flyBuzz');
+    let isAnimating = false;
+    let audioEnabled = false;
+    let interactionCount = 0;
+    let isFollowingCursor = false;
+    let cursorFollowAnimation = null;
+    let mousePositions = [];
+    let lastMouseTime = 0;
+
+    // Function to get random position within container bounds
+    function getRandomPosition() {
+      const maxX = window.innerWidth - 90; // viewport width - fly width
+      const maxY = window.innerHeight - 90; // viewport height - fly height
+      return {
+        x: Math.random() * maxX,
+        y: Math.random() * maxY
+      };
+    }
+
+    // Function to create swirling animation
+    function createSwirlingAnimation() {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      // Increment interaction count
+      interactionCount++;
+      console.log(`Interaction #${interactionCount}`);
+
+      // Enable audio on first interaction with bounding box
+      if (!audioEnabled) {
+        audioEnabled = true;
+        console.log('Audio enabled on first bounding box interaction');
+      }
+
+      // Check if this is the 3rd interaction (cursor following mode)
+      if (interactionCount % 3 === 0) {
+        console.log('3rd interaction - activating cursor following mode!');
+        isFollowingCursor = true;
+        startCursorFollowing();
+        return;
+      }
+
+      // Start MP3 buzzing sound
+      console.log('Starting fly animation - playing MP3 buzz...');
+      flyBuzz.currentTime = 0;
+      flyBuzz.volume = 0.3;
+      
+      const playPromise = flyBuzz.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log('MP3 buzzing sound started successfully');
+        }).catch(e => {
+          console.log('MP3 audio play failed:', e);
+          console.log('Error details:', e.message);
+        });
+      }
+
+      // Random duration between 1.5-3 seconds (more realistic fly speed)
+      const duration = 1.5 + Math.random() * 1.5;
+      
+      // Get the fly's current actual position
+      const flyRect = fly.getBoundingClientRect();
+      const currentPos = {
+        x: flyRect.left + flyRect.width / 2,
+        y: flyRect.top + flyRect.height / 2
+      };
+
+      // Create realistic fly movement path
+      const flyPoints = [];
+      
+      // Generate more points (8-12) for smoother movement with larger paths
+      const numPoints = 8 + Math.floor(Math.random() * 5);
+      
+      // Random flight path size - sometimes much bigger, sometimes full screen
+      let pathSize, baseDistance, maxDistance;
+      const randomValue = Math.random();
+      
+      if (randomValue < 0.5) {
+        // 50% chance: Normal size
+        pathSize = 1;
+        baseDistance = 40;
+        maxDistance = 80;
+      } else if (randomValue < 0.8) {
+        // 30% chance: 2.5x larger path
+        pathSize = 2.5;
+        baseDistance = 100;
+        maxDistance = 200;
+      } else {
+        // 20% chance: Full screen flight
+        pathSize = 4;
+        baseDistance = Math.min(window.innerWidth, window.innerHeight) * 0.1;
+        maxDistance = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+      }
+      
+      // Start with current position
+      flyPoints.push({ x: currentPos.x, y: currentPos.y });
+      
+      // Create erratic fly-like movement
+      for (let i = 1; i < numPoints; i++) {
+        const prevPoint = flyPoints[i - 1];
+        
+        // Random direction changes (flies don't move in circles)
+        const angle = Math.random() * Math.PI * 2;
+        const distance = baseDistance + Math.random() * maxDistance; // Variable distances based on path size
+        
+        // Add some zigzag movement (scaled with path size)
+        const zigzag = (Math.random() - 0.5) * 50 * Math.min(pathSize, 3); // Cap zigzag for full screen flights
+        
+        flyPoints.push({
+          x: prevPoint.x + Math.cos(angle) * distance + zigzag,
+          y: prevPoint.y + Math.sin(angle) * distance + zigzag
+        });
+      }
+
+      // Create timeline for fly movement
+      const tl = gsap.timeline();
+      
+      // Add realistic fly rotation (more erratic)
+      tl.to(fly, {
+        rotation: (Math.random() - 0.5) * 360, // Full rotation in both directions
+        duration: duration * 0.2,
+        ease: "power1.inOut"
+      }, 0);
+
+      // Add erratic fly movement with variable timing and rotation
+      flyPoints.forEach((point, index) => {
+        if (index === 0) return; // Skip first point (starting position)
+        
+        // Faster takeoff for first few points, then normal speed
+        let segmentDuration;
+        if (index <= 2) {
+          // Fast takeoff - first 3 movements are quick
+          segmentDuration = (duration / (numPoints - 1)) * 0.3;
+        } else {
+                  // Normal erratic movement (adjusted for path size)
+        let durationMultiplier = 1;
+        if (pathSize === 2.5) durationMultiplier = 1.2;
+        if (pathSize === 4) durationMultiplier = 1.5; // Slower for full screen flights
+        
+        segmentDuration = (duration / (numPoints - 1)) * (0.8 + Math.random() * 0.4) * durationMultiplier;
+        }
+        
+        // Add rotation for each movement segment
+        const rotationAmount = (Math.random() - 0.5) * 720; // Random rotation up to 2 full turns
+        
+        tl.to(fly, {
+          left: point.x + 'px',
+          top: point.y + 'px',
+          rotation: rotationAmount,
+          duration: segmentDuration,
+          ease: index <= 2 ? "power2.out" : "power1.inOut", // Fast takeoff, then erratic
+          onUpdate: function() {
+            // Update bounding box position to follow fly during movement
+            const flyRect = fly.getBoundingClientRect();
+            const flyCenterX = flyRect.left + flyRect.width / 2;
+            const flyCenterY = flyRect.top + flyRect.height / 2;
+            boundingBox.style.left = (flyCenterX - 125) + 'px';
+            boundingBox.style.top = (flyCenterY - 125) + 'px';
+          }
+        }, index * (duration / (numPoints - 1)));
+      });
+
+      // After flying, move to a position closer to the last fly point
+      const lastFlyPoint = flyPoints[flyPoints.length - 1];
+      const landingArea = pathSize === 4 ? 200 : 120 * pathSize; // Larger landing area for full screen flights
+      const finalPos = {
+        x: lastFlyPoint.x + (Math.random() - 0.5) * landingArea,
+        y: lastFlyPoint.y + (Math.random() - 0.5) * landingArea
+      };
+      
+      // Ensure final position is within bounds
+      finalPos.x = Math.max(10, Math.min(window.innerWidth - 30, finalPos.x));
+      finalPos.y = Math.max(10, Math.min(window.innerHeight - 30, finalPos.y));
+      
+      tl.to(fly, {
+        left: finalPos.x + 'px',
+        top: finalPos.y + 'px',
+        rotation: 0,
+        duration: 2.5, // Even longer landing for very slow, gentle landing
+        ease: "power4.out", // Very smooth, slow landing
+        onUpdate: function() {
+          // Update bounding box position during landing
+          const flyRect = fly.getBoundingClientRect();
+          const flyCenterX = flyRect.left + flyRect.width / 2;
+          const flyCenterY = flyRect.top + flyRect.height / 2;
+          boundingBox.style.left = (flyCenterX - 125) + 'px';
+          boundingBox.style.top = (flyCenterY - 125) + 'px';
+        }
+      }, duration);
+
+      // Update fly position and reset animation state
+      tl.call(() => {
+        isAnimating = false;
+        
+        // Stop buzzing sound when fly lands
+        flyBuzz.pause();
+        flyBuzz.currentTime = 0;
+        console.log('Audio buzzing sound stopped - fly has landed');
+      });
+    }
+
+    // Add mouse enter event to bounding box
+    boundingBox.addEventListener('mouseenter', createSwirlingAnimation);
+    
+    // Function to stop cursor following mode
+    function stopCursorFollowing() {
+      if (isFollowingCursor) {
+        console.log('Stopping cursor following mode');
+        isFollowingCursor = false;
+        isAnimating = false;
+        
+        // Stop the cursor following animation
+        if (cursorFollowAnimation) {
+          cursorFollowAnimation.kill();
+          cursorFollowAnimation = null;
+        }
+        
+        // Remove mouse movement listener
+        document.removeEventListener('mousemove', updateMousePosition);
+        
+        // Clear mouse position tracking
+        mousePositions = [];
+        
+        // Stop buzzing sound
+        flyBuzz.pause();
+        flyBuzz.currentTime = 0;
+        console.log('Audio buzzing sound stopped - cursor following ended');
+        
+        // Land the fly at current position
+        const flyRect = fly.getBoundingClientRect();
+        const currentX = flyRect.left + flyRect.width / 2;
+        const currentY = flyRect.top + flyRect.height / 2;
+        
+        fly.style.left = currentX + 'px';
+        fly.style.top = currentY + 'px';
+        fly.style.transform = 'translate(0, 0)';
+        
+        // Update bounding box position
+        const boundingBoxX = currentX - 125;
+        const boundingBoxY = currentY - 125;
+        boundingBox.style.left = boundingBoxX + 'px';
+        boundingBox.style.top = boundingBoxY + 'px';
+        
+        // Reset interaction count to start fresh
+        interactionCount = 0;
+        console.log('Interaction count reset - ready for next cycle');
+      }
+    }
+    
+    // Function to start cursor following mode
+    function startCursorFollowing() {
+      console.log('Starting cursor following mode');
+      
+      // Start buzzing sound
+      flyBuzz.currentTime = 0;
+      flyBuzz.volume = 0.3;
+      flyBuzz.play().catch(e => console.log('Audio play failed:', e));
+      
+      // Track mouse movement
+      document.addEventListener('mousemove', updateMousePosition);
+      
+      // Create continuous cursor following animation
+      cursorFollowAnimation = gsap.to(fly, {
+        duration: 0.3,
+        ease: "power2.out",
+        repeat: -1, // Infinite repeat
+        onUpdate: function() {
+          // Get current mouse position
+          const mouseX = window.mouseX || window.innerWidth / 2;
+          const mouseY = window.mouseY || window.innerHeight / 2;
+          
+          // Update fly position to follow cursor
+          fly.style.left = (mouseX - 45) + 'px';
+          fly.style.top = (mouseY - 45) + 'px';
+          
+          // Add some rotation for realistic movement
+          fly.style.transform = `rotate(${Math.random() * 360}deg)`;
+        }
+      });
+    }
+    
+    // Function to detect cursor shaking
+    function detectCursorShaking(currentX, currentY) {
+      const now = Date.now();
+      const timeWindow = 500; // 500ms window to detect shaking
+      
+      // Add current position with timestamp
+      mousePositions.push({ x: currentX, y: currentY, time: now });
+      
+      // Remove positions older than timeWindow
+      mousePositions = mousePositions.filter(pos => now - pos.time < timeWindow);
+      
+      // Need at least 5 positions to detect shaking
+      if (mousePositions.length < 5) return false;
+      
+      // Calculate total distance moved
+      let totalDistance = 0;
+      for (let i = 1; i < mousePositions.length; i++) {
+        const dx = mousePositions[i].x - mousePositions[i-1].x;
+        const dy = mousePositions[i].y - mousePositions[i-1].y;
+        totalDistance += Math.sqrt(dx * dx + dy * dy);
+      }
+      
+      // Calculate average speed (pixels per second)
+      const timeSpan = (now - mousePositions[0].time) / 1000;
+      const averageSpeed = totalDistance / timeSpan;
+      
+      // Threshold for shaking detection (adjust as needed)
+      const shakeThreshold = 1500; // pixels per second - increased for more vigorous shaking required
+      
+      console.log(`Cursor speed: ${averageSpeed.toFixed(1)} px/s, threshold: ${shakeThreshold}`);
+      
+      return averageSpeed > shakeThreshold;
+    }
+
+    // Function to update mouse position
+    function updateMousePosition(e) {
+      if (isFollowingCursor) {
+        window.mouseX = e.clientX;
+        window.mouseY = e.clientY;
+        
+        // Check for cursor shaking to stop following mode
+        if (detectCursorShaking(e.clientX, e.clientY)) {
+          console.log('Cursor shaking detected - stopping cursor following mode');
+          stopCursorFollowing();
+        }
+      }
+    }
+    
+
+    
+    // Handle window resize to update fly position if needed
+    window.addEventListener('resize', () => {
+      if (!isAnimating) {
+        const currentX = parseFloat(fly.style.left) || window.innerWidth / 2;
+        const currentY = parseFloat(fly.style.top) || window.innerHeight / 2;
+        
+        // Keep fly within bounds if window is resized
+        const maxX = window.innerWidth - 90;
+        const maxY = window.innerHeight - 90;
+        
+        if (currentX > maxX) fly.style.left = maxX + 'px';
+        if (currentY > maxY) fly.style.top = maxY + 'px';
+        
+        // Update bounding box position
+        const boundingBoxX = (parseFloat(fly.style.left) || window.innerWidth / 2) - 125;
+        const boundingBoxY = (parseFloat(fly.style.top) || window.innerHeight / 2) - 125;
+        boundingBox.style.left = boundingBoxX + 'px';
+        boundingBox.style.top = boundingBoxY + 'px';
+      }
+    });
+  }
+
+  </script>
+</html>
