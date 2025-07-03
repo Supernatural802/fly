@@ -89,19 +89,7 @@
         left: 50vw;
         transform: translate(-50%, -50%);
         transform-origin: center;
-      }
-
-      #flyBoundingBox {
-        position: absolute;
-        width: 250px;
-        height: 250px;
-        border: none;
-        border-radius: 50%;
-        top: calc(50vh - 125px);
-        left: calc(50vw - 125px);
-        z-index: 399;
         cursor: pointer;
-        background: transparent;
       }
 
       .game-header {
@@ -170,11 +158,10 @@
 
       <!-- Game Header -->
       <div class="game-header">
-        <div class="game-title">GET THE FLY</div>
+        <div class="game-title">POKE THE FLY</div>
         <button class="start-button" id="startButton">Click Here to Start</button>
       </div>
 
-      <div id="flyBoundingBox"></div>
       <div id="fly"></div>
 
       <!-- Audio element for fly buzzing sound -->
@@ -216,17 +203,15 @@
       }
       
       // Trigger the first fly animation
-      const boundingBox = document.getElementById('flyBoundingBox');
-      if (boundingBox) {
+      if (fly) {
         // Simulate mouse enter event to start the first animation
-        boundingBox.dispatchEvent(new Event('mouseenter'));
+        fly.dispatchEvent(new Event('mouseenter'));
       }
     });
   }
 
   function initFlyAnimation() {
     const fly = document.getElementById('fly');
-    const boundingBox = document.getElementById('flyBoundingBox');
     const flyBuzz = document.getElementById('flyBuzz');
     let isAnimating = false;
     let audioEnabled = false;
@@ -284,8 +269,8 @@
         });
       }
 
-      // Random duration between 1.5-3 seconds (more realistic fly speed)
-      const duration = 1.5 + Math.random() * 1.5;
+      // Random duration between 0.5-1.2 seconds (much faster fly speed)
+      const duration = 0.5 + Math.random() * 0.7;
       
       // Get the fly's current actual position
       const flyRect = fly.getBoundingClientRect();
@@ -355,18 +340,18 @@
       flyPoints.forEach((point, index) => {
         if (index === 0) return; // Skip first point (starting position)
         
-        // Faster takeoff for first few points, then normal speed
+        // Fast movement for all segments
         let segmentDuration;
         if (index <= 2) {
-          // Fast takeoff - first 3 movements are quick
-          segmentDuration = (duration / (numPoints - 1)) * 0.3;
+          // Very fast takeoff - first 3 movements are super quick
+          segmentDuration = (duration / (numPoints - 1)) * 0.2;
         } else {
-                  // Normal erratic movement (adjusted for path size)
-        let durationMultiplier = 1;
-        if (pathSize === 2.5) durationMultiplier = 1.2;
-        if (pathSize === 4) durationMultiplier = 1.5; // Slower for full screen flights
-        
-        segmentDuration = (duration / (numPoints - 1)) * (0.8 + Math.random() * 0.4) * durationMultiplier;
+          // Fast erratic movement (adjusted for path size)
+          let durationMultiplier = 0.8; // Faster overall
+          if (pathSize === 2.5) durationMultiplier = 1.0;
+          if (pathSize === 4) durationMultiplier = 1.2; // Still fast for full screen flights
+          
+          segmentDuration = (duration / (numPoints - 1)) * (0.6 + Math.random() * 0.3) * durationMultiplier;
         }
         
         // Add rotation for each movement segment
@@ -378,23 +363,16 @@
           rotation: rotationAmount,
           duration: segmentDuration,
           ease: index <= 2 ? "power2.out" : "power1.inOut", // Fast takeoff, then erratic
-          onUpdate: function() {
-            // Update bounding box position to follow fly during movement
-            const flyRect = fly.getBoundingClientRect();
-            const flyCenterX = flyRect.left + flyRect.width / 2;
-            const flyCenterY = flyRect.top + flyRect.height / 2;
-            boundingBox.style.left = (flyCenterX - 125) + 'px';
-            boundingBox.style.top = (flyCenterY - 125) + 'px';
-          }
+
         }, index * (duration / (numPoints - 1)));
       });
 
-      // After flying, move to a position closer to the last fly point
+      // After flying, quickly move to final position
       const lastFlyPoint = flyPoints[flyPoints.length - 1];
-      const landingArea = pathSize === 4 ? 200 : 120 * pathSize; // Larger landing area for full screen flights
+      const finalArea = pathSize === 4 ? 150 : 80 * pathSize; // Smaller final area
       const finalPos = {
-        x: lastFlyPoint.x + (Math.random() - 0.5) * landingArea,
-        y: lastFlyPoint.y + (Math.random() - 0.5) * landingArea
+        x: lastFlyPoint.x + (Math.random() - 0.5) * finalArea,
+        y: lastFlyPoint.y + (Math.random() - 0.5) * finalArea
       };
       
       // Ensure final position is within bounds
@@ -405,16 +383,8 @@
         left: finalPos.x + 'px',
         top: finalPos.y + 'px',
         rotation: 0,
-        duration: 2.5, // Even longer landing for very slow, gentle landing
-        ease: "power4.out", // Very smooth, slow landing
-        onUpdate: function() {
-          // Update bounding box position during landing
-          const flyRect = fly.getBoundingClientRect();
-          const flyCenterX = flyRect.left + flyRect.width / 2;
-          const flyCenterY = flyRect.top + flyRect.height / 2;
-          boundingBox.style.left = (flyCenterX - 125) + 'px';
-          boundingBox.style.top = (flyCenterY - 125) + 'px';
-        }
+        duration: 0.3, // Quick final movement
+        ease: "power2.out" // Fast, snappy movement
       }, duration);
 
       // Update fly position and reset animation state
@@ -428,8 +398,8 @@
       });
     }
 
-    // Add mouse enter event to bounding box
-    boundingBox.addEventListener('mouseenter', createSwirlingAnimation);
+    // Add mouse enter event to fly
+    fly.addEventListener('mouseenter', createSwirlingAnimation);
     
     // Function to stop cursor following mode
     function stopCursorFollowing() {
@@ -464,11 +434,7 @@
         fly.style.top = currentY + 'px';
         fly.style.transform = 'translate(0, 0)';
         
-        // Update bounding box position
-        const boundingBoxX = currentX - 125;
-        const boundingBoxY = currentY - 125;
-        boundingBox.style.left = boundingBoxX + 'px';
-        boundingBox.style.top = boundingBoxY + 'px';
+
         
         // Reset interaction count to start fresh
         interactionCount = 0;
@@ -571,11 +537,7 @@
         if (currentX > maxX) fly.style.left = maxX + 'px';
         if (currentY > maxY) fly.style.top = maxY + 'px';
         
-        // Update bounding box position
-        const boundingBoxX = (parseFloat(fly.style.left) || window.innerWidth / 2) - 125;
-        const boundingBoxY = (parseFloat(fly.style.top) || window.innerHeight / 2) - 125;
-        boundingBox.style.left = boundingBoxX + 'px';
-        boundingBox.style.top = boundingBoxY + 'px';
+
       }
     });
   }
