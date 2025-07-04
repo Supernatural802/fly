@@ -135,6 +135,34 @@
         display: none;
       }
 
+      /* Mobile-specific styles */
+      @media (max-width: 768px) {
+        .game-title {
+          font-size: 36px; /* Smaller title on mobile */
+        }
+        
+        .start-button {
+          padding: 12px 24px;
+          font-size: 16px;
+        }
+        
+        #fly {
+          /* Ensure fly is touch-friendly on mobile */
+          touch-action: manipulation;
+        }
+      }
+
+      /* Prevent text selection and improve touch experience */
+      body {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        touch-action: manipulation;
+      }
+
       /* FONTS, BULLETS AND LIST STYLES ---------------------------------------*/
 
 
@@ -398,8 +426,40 @@
       });
     }
 
-    // Add mouse enter event to fly
+    // Add mouse enter event to fly (desktop)
     fly.addEventListener('mouseenter', createSwirlingAnimation);
+    
+    // Add touch events for mobile devices
+    fly.addEventListener('touchstart', function(e) {
+      e.preventDefault(); // Prevent default touch behavior
+      createSwirlingAnimation();
+    });
+    
+    // Add touch events to the entire document for cursor following mode on mobile
+    document.addEventListener('touchmove', function(e) {
+      if (isFollowingCursor) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        window.mouseX = touch.clientX;
+        window.mouseY = touch.clientY;
+        
+        // Check for touch shaking to stop following mode
+        if (detectCursorShaking(touch.clientX, touch.clientY)) {
+          console.log('Touch shaking detected - stopping cursor following mode');
+          stopCursorFollowing();
+        }
+      }
+    });
+    
+    // Add touch end event to stop cursor following on mobile
+    document.addEventListener('touchend', function(e) {
+      if (isFollowingCursor) {
+        e.preventDefault();
+        // Optional: stop following when touch ends
+        // Uncomment the line below if you want touch end to stop following
+        // stopCursorFollowing();
+      }
+    });
     
     // Function to stop cursor following mode
     function stopCursorFollowing() {
@@ -456,15 +516,15 @@
       
       // Create continuous cursor following animation
       cursorFollowAnimation = gsap.to(fly, {
-        duration: 0.3,
+        duration: 0.1, // Faster update for better touch responsiveness
         ease: "power2.out",
         repeat: -1, // Infinite repeat
         onUpdate: function() {
-          // Get current mouse position
+          // Get current mouse/touch position
           const mouseX = window.mouseX || window.innerWidth / 2;
           const mouseY = window.mouseY || window.innerHeight / 2;
           
-          // Update fly position to follow cursor
+          // Update fly position to follow cursor/touch
           fly.style.left = (mouseX - 45) + 'px';
           fly.style.top = (mouseY - 45) + 'px';
           
